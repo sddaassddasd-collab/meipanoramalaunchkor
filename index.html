@@ -11,7 +11,7 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","Helvetica Neue",Arial,sans-serif}
   #panorama{position:absolute;inset:0;z-index:0}
 
-  /* 中央人物（頭和身體疊合） */
+  /* 中央人物 */
   .character {
     position:fixed;
     top:70%; left:50%;
@@ -19,18 +19,11 @@
     z-index:20;
     pointer-events:none;
   }
-  #body {
-    max-width:160px; /* 身體大小 */
-  }
-  #head {
-    position:absolute;
-    top:-110px;       /* 頭與身體的距離，可調整 */
-    left:50%;
-    transform:translateX(-50%);
-    max-width:120px; /* 頭大小 */
-  }
+  .hidden{ display:none; }
+  #body {max-width:160px;display:none;}
+  #head {position:absolute;top:-110px;left:50%;transform:translateX(-50%);max-width:120px;display:none;}
 
-  /* 右側國旗（會被合成） */
+  /* 國旗 */
   .flag{
     position:fixed;top:50%;right:12px;transform:translateY(-50%);
     z-index:20;pointer-events:none;
@@ -62,7 +55,7 @@
   }
   .toggle-btn:hover{background:rgba(37,99,235,.95)}
 
-  /* 拍照按鈕與預覽卡 */
+  /* 拍照與預覽 */
   .btn{position:fixed;right:12px;bottom:60px;padding:8px 12px;background:rgba(30,41,59,.85);color:#fff;border:none;border-radius:10px;cursor:pointer;z-index:30}
   .btn:hover{background:rgba(59,130,246,.9)}
   .badge{position:fixed;left:12px;bottom:12px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.25);padding:6px 8px;border-radius:10px;font-size:12px;opacity:.85;z-index:30}
@@ -79,24 +72,47 @@
   .btn-primary:hover{background:rgba(37,99,235,.95)}
   .close-x{appearance:none;border:none;background:transparent;color:#94a3b8;font-size:18px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
   .close-x:hover{background:rgba(148,163,184,.15);color:#e2e8f0}
+
+  /* 左上角 End 按鈕 */
+  .exit-btn{
+    position:fixed;top:10px;left:10px;
+    z-index:1000;
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 12px;border:1px solid rgba(148,163,184,.35);
+    border-radius:10px;background:rgba(15,23,42,.85);
+    color:#e2e8f0;cursor:pointer;font-weight:600;font-size:14px;
+    backdrop-filter: blur(6px);
+  }
+  .exit-btn:hover{background:rgba(30,41,59,.95);}
+  .exit-btn .x{font-size:16px;line-height:1;opacity:.9}
 </style>
 </head>
 <body>
-  <!-- 自動播放音樂（無 loop） -->
+  <!-- 音樂 -->
   <audio id="bgAudio" src="audio.mp3" autoplay></audio>
 
+  <!-- panorama -->
   <div id="panorama"></div>
 
+  <!-- 左上角 End -->
+  <button id="exitBtn" class="exit-btn" aria-label="End and leave">
+    <span class="x">×</span> End
+  </button>
+  <a id="exitFallback"
+     href="https://sddaassddasd-collab.github.io/theinvinciblecityending/"
+     target="_top" rel="noopener"
+     style="display:none">fallback</a>
+
   <!-- 人物 -->
-  <div class="character" id="character">
-    <img id="body" src="./images/body1.png" alt="body">
-    <img id="head" src="./images/head1.png" alt="head">
+  <div class="character hidden" id="character">
+    <img id="body" alt="body">
+    <img id="head" alt="head">
   </div>
 
   <!-- 國旗 -->
   <div class="flag" id="flag"><img id="flagImg" src="./images/flag1.png" alt="flag"></div>
 
-  <!-- 底部控制面板 -->
+  <!-- 控制面板 -->
   <div class="controls collapsed" id="controls">
     <button class="toggle-btn" id="toggleBtn">▲ 스타일 선택 | Choose outfit</button>
     <div>
@@ -113,7 +129,7 @@
     </div>
   </div>
 
-  <!-- 狀態/拍照/預覽 -->
+  <!-- 拍照與預覽 -->
   <div id="statusBadge" class="badge" hidden>로딩 중… | Loading…</div>
   <button id="captureBtn" class="btn">📷 촬영 | Capture</button>
 
@@ -131,7 +147,7 @@
     </div>
   </div>
 
-  <!-- WebGL preserve -->
+  <!-- 保留 WebGL buffer -->
   <script>
     (function monkeyPatchPreserveDrawingBuffer(){
       const orig = HTMLCanvasElement.prototype.getContext;
@@ -146,191 +162,147 @@
 
   <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
   <script>
-    // ===== 初始化 Pannellum =====
     const viewer = pannellum.viewer('panorama', {
       type: 'equirectangular',
-      panorama: 'panorama_mei.jpg', 
+      panorama: 'panorama_mei.jpg',
       autoLoad: true,
       showZoomCtrl: true,
       showFullscreenCtrl: true,
       hfov: 100, minHfov: 50, maxHfov: 120,
       pitch: 0, yaw: 0,
-      backgroundColor: [15, 23, 42]
+      backgroundColor: [15,23,42]
     });
 
-    // ===== 音樂自動播放 fallback =====
     window.addEventListener('DOMContentLoaded', () => {
       const audio = document.getElementById('bgAudio');
-      audio.play().catch(err => {
-        console.warn('自動播放失敗，需要互動：', err);
-        const btn = document.createElement('button');
-        btn.textContent = "▶ 음악 재생 | Play music";
-        btn.style.position = 'fixed';
-        btn.style.top = '50%';
-        btn.style.left = '50%';
-        btn.style.transform = 'translate(-50%, -50%)';
-        btn.style.zIndex = 2000;
-        btn.style.padding = '12px 20px';
-        btn.style.fontSize = '18px';
-        btn.style.background = 'rgba(30,41,59,0.9)';
-        btn.style.color = '#fff';
-        btn.style.border = 'none';
-        btn.style.borderRadius = '10px';
-        btn.style.cursor = 'pointer';
-        btn.style.boxShadow = '0 6px 20px rgba(0,0,0,.4)';
-        document.body.appendChild(btn);
-        btn.addEventListener('click', () => {
-          audio.play();
-          btn.remove();
+      audio.play().catch(err=>{
+        const btn=document.createElement('button');
+        btn.textContent="▶ 음악 재생 | Play music";
+        Object.assign(btn.style,{
+          position:'fixed',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+          zIndex:2000,padding:'12px 20px',fontSize:'18px',background:'rgba(30,41,59,0.9)',
+          color:'#fff',border:'none',borderRadius:'10px',cursor:'pointer',
+          boxShadow:'0 6px 20px rgba(0,0,0,.4)'
         });
+        document.body.appendChild(btn);
+        btn.addEventListener('click',()=>{audio.play();btn.remove();});
       });
     });
 
-    // ===== 頭/身體圖片、國旗對應表 =====
-    const headImages = Array.from({length: 6}, (_,i)=>`./images/head${i+1}.png`);
-    const bodyImages = Array.from({length: 10}, (_,i)=>`./images/body${i+1}.png`);
+    const headImages = Array.from({length:6},(_,i)=>`./images/head${i+1}.png`);
+    const bodyImages = Array.from({length:10},(_,i)=>`./images/body${i+1}.png`);
+    const flagEmojis=["🇹🇼","🇰🇷","🇻🇳","🇭🇰","🇨🇳","🇲🇾","🇯🇵","🇩🇪","🇺🇸","🇬🇧"];
+    const flagPngs=Array.from({length:11},(_,i)=>`./images/flag${i+1}.png`);
 
-    const flagEmojis = ["🇹🇼","🇰🇷","🇻🇳","🇭🇰","🇨🇳","🇲🇾","🇯🇵","🇩🇪","🇺🇸","🇬🇧"];
-    const flagPngs   = Array.from({length: 11}, (_,i)=>`./images/flag${i+1}.png`);
+    const panoEl=document.getElementById('panorama');
+    const headEl=document.getElementById('head');
+    const bodyEl=document.getElementById('body');
+    const flagImgEl=document.getElementById('flagImg');
+    const characterEl=document.getElementById('character');
+    const headBox=document.getElementById('headOptions');
+    const bodyBox=document.getElementById('bodyOptions');
+    const flagBox=document.getElementById('flagOptions');
+    const controls=document.getElementById('controls');
+    const toggleBtn=document.getElementById('toggleBtn');
+    const badge=document.getElementById('statusBadge');
+    const captureBtn=document.getElementById('captureBtn');
+    const previewCard=document.getElementById('previewCard');
+    const previewImg=document.getElementById('previewImg');
+    const closeBtn=document.getElementById('closePreview');
+    const retakeBtn=document.getElementById('retakeBtn');
+    const downloadBtn=document.getElementById('downloadBtn');
+    let currentBlobUrl=null,ready=false;
+    viewer.on('load',()=>{ready=true;});
 
-    const panoEl = document.getElementById('panorama');
-    const headEl = document.getElementById('head');
-    const bodyEl = document.getElementById('body');
-    const flagImgEl = document.getElementById('flagImg');
-
-    const headBox = document.getElementById('headOptions');
-    const bodyBox = document.getElementById('bodyOptions');
-    const flagBox = document.getElementById('flagOptions');
-
-    const controls = document.getElementById('controls');
-    const toggleBtn = document.getElementById('toggleBtn');
-
-    const badge = document.getElementById('statusBadge');
-    const captureBtn  = document.getElementById('captureBtn');
-    const previewCard = document.getElementById('previewCard');
-    const previewImg  = document.getElementById('previewImg');
-    const closeBtn    = document.getElementById('closePreview');
-    const retakeBtn   = document.getElementById('retakeBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-
-    let currentBlobUrl = null;
-    let ready = false;
-    viewer.on('load', ()=>{ ready = true; });
-
-    function setBadge(text, show=true){ badge.textContent = text; badge.hidden = !show; }
+    function setBadge(t,show=true){badge.textContent=t;badge.hidden=!show;}
     function showPreviewWithBlob(blob){
-      if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-      currentBlobUrl = URL.createObjectURL(blob);
-      previewImg.src = currentBlobUrl;
-      const ts = new Date().toISOString().replace(/[:.]/g,'-');
-      downloadBtn.href = currentBlobUrl;
-      downloadBtn.download = `panorama_capture_${ts}.png`;
-      previewCard.style.display = 'block';
+      if(currentBlobUrl)URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl=URL.createObjectURL(blob);
+      previewImg.src=currentBlobUrl;
+      const ts=new Date().toISOString().replace(/[:.]/g,'-');
+      downloadBtn.href=currentBlobUrl;
+      downloadBtn.download=`panorama_capture_${ts}.png`;
+      previewCard.style.display='block';
     }
     function hidePreview(){
-      previewCard.style.display = 'none';
-      if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-      currentBlobUrl = null;
+      previewCard.style.display='none';
+      if(currentBlobUrl)URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl=null;
       previewImg.removeAttribute('src');
       downloadBtn.removeAttribute('href');
     }
-
-    function renderImageOptions(box, items, targetEl){
-      items.forEach((src, idx)=>{
-        const btn = document.createElement('button');
-        btn.textContent = idx+1;
-        btn.addEventListener('click', ()=>{ targetEl.src = src; });
-        box.appendChild(btn);
+    function revealCharacter(){characterEl.classList.remove('hidden');}
+    function renderImageOptions(box,items,targetEl){
+      items.forEach((src,i)=>{
+        const b=document.createElement('button');
+        b.textContent=i+1;
+        b.onclick=()=>{targetEl.src=src;targetEl.style.display='block';revealCharacter();};
+        box.appendChild(b);
       });
     }
-    function renderFlagOptions(box, emojiList, pngList, targetImgEl){
-      emojiList.forEach((emoji, idx)=>{
-        const btn = document.createElement('button');
-        btn.textContent = emoji;
-        btn.addEventListener('click', ()=>{ targetImgEl.src = pngList[idx]; });
-        box.appendChild(btn);
+    function renderFlagOptions(box,emojiList,pngList,target){
+      emojiList.forEach((e,i)=>{
+        const b=document.createElement('button');
+        b.textContent=e;
+        b.onclick=()=>{target.src=pngList[i];};
+        box.appendChild(b);
       });
     }
-    renderImageOptions(headBox, headImages, headEl);
-    renderImageOptions(bodyBox, bodyImages, bodyEl);
-    renderFlagOptions(flagBox, flagEmojis, flagPngs, flagImgEl);
+    renderImageOptions(headBox,headImages,headEl);
+    renderImageOptions(bodyBox,bodyImages,bodyEl);
+    renderFlagOptions(flagBox,flagEmojis,flagPngs,flagImgEl);
 
-    toggleBtn.addEventListener('click', ()=>{
+    toggleBtn.onclick=()=>{
       controls.classList.toggle('collapsed');
-      toggleBtn.textContent = controls.classList.contains('collapsed')
+      toggleBtn.textContent=controls.classList.contains('collapsed')
         ? '▲ 스타일 선택 | Choose outfit'
         : '▼ 창 닫기 | Close panel';
-    });
+    };
 
-    // ===== 合成截圖 =====
     async function captureComposite(){
-      const r = viewer.getRenderer?.();
-      if (!r || !r.getCanvas) throw new Error('렌더러/캔버스를 가져올 수 없습니다 | Unable to get renderer/canvas');
-      const glCanvas = r.getCanvas();
-      const gl = glCanvas.getContext('webgl') || glCanvas.getContext('experimental-webgl');
-      if (!gl) throw new Error('WebGL 컨텍스트가 없습니다 | No WebGL context');
-
-      const W = glCanvas.width, H = glCanvas.height;
-      if (!W || !H) throw new Error('캔버스 크기가 0입니다 | Canvas size is 0');
-
-      const oldYaw = viewer.getYaw();
-      viewer.setYaw(oldYaw + 0.0001);
-      r.render?.();
-      viewer.setYaw(oldYaw);
+      const r=viewer.getRenderer?.(); if(!r||!r.getCanvas)throw new Error('Unable to get renderer/canvas');
+      const glCanvas=r.getCanvas(); const gl=glCanvas.getContext('webgl')||glCanvas.getContext('experimental-webgl');
+      if(!gl)throw new Error('No WebGL context');
+      const W=glCanvas.width,H=glCanvas.height; if(!W||!H)throw new Error('Canvas size 0');
+      const oldYaw=viewer.getYaw(); viewer.setYaw(oldYaw+0.0001); r.render?.(); viewer.setYaw(oldYaw);
       await new Promise(requestAnimationFrame);
-
-      const pixels = new Uint8Array(W * H * 4);
-      gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-      const out = document.createElement('canvas');
-      out.width = W; out.height = H;
-      const ctx = out.getContext('2d');
-      const imgData = ctx.createImageData(W, H);
-      for (let y = 0; y < H; y++) {
-        const srcRow = H - 1 - y;
-        imgData.data.set(
-          pixels.subarray(srcRow * W * 4, (srcRow + 1) * W * 4),
-          y * W * 4
-        );
-      }
-      ctx.putImageData(imgData, 0, 0);
-
-      const dpr = window.devicePixelRatio || 1;
-      const panoRect = panoEl.getBoundingClientRect();
-      function drawImgAtElement(imgEl){
-        if (!imgEl.complete) return;
-        const rEl = imgEl.getBoundingClientRect();
-        const x = (rEl.left - panoRect.left) * dpr;
-        const y = (rEl.top  - panoRect.top)  * dpr;
-        const w = rEl.width  * dpr;
-        const h = rEl.height * dpr;
-        if (w>0 && h>0) ctx.drawImage(imgEl, x, y, w, h);
-      }
-
-      drawImgAtElement(bodyEl);
-      drawImgAtElement(headEl);
-      drawImgAtElement(flagImgEl);
-
-      const blob = await new Promise(res => out.toBlob(res, 'image/png'));
-      return blob;
+      const pixels=new Uint8Array(W*H*4); gl.readPixels(0,0,W,H,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+      const out=document.createElement('canvas'); out.width=W; out.height=H;
+      const ctx=out.getContext('2d'); const imgData=ctx.createImageData(W,H);
+      for(let y=0;y<H;y++){const s=H-1-y; imgData.data.set(pixels.subarray(s*W*4,(s+1)*W*4),y*W*4);}
+      ctx.putImageData(imgData,0,0);
+      const dpr=window.devicePixelRatio||1; const panoRect=panoEl.getBoundingClientRect();
+      function drawImg(el){if(!el||!el.complete||!el.src)return;const r=el.getBoundingClientRect();
+        const x=(r.left-panoRect.left)*dpr,y=(r.top-panoRect.top)*dpr,w=r.width*dpr,h=r.height*dpr;
+        if(w>0&&h>0)ctx.drawImage(el,x,y,w,h);}
+      drawImg(bodyEl);drawImg(headEl);drawImg(flagImgEl);
+      return await new Promise(res=>out.toBlob(res,'image/png'));
     }
 
-    captureBtn.addEventListener('click', async ()=>{
+    captureBtn.onclick=async()=>{
       try{
-        if (!ready){ setBadge('로딩 중… | Loading…', true); return; }
-        setBadge('캡처 중… | Capturing…', true);
-        const blob = await captureComposite();
+        if(!ready){setBadge('로딩 중… | Loading…',true);return;}
+        setBadge('캡처 중… | Capturing…',true);
+        const blob=await captureComposite();
         showPreviewWithBlob(blob);
-        setBadge('캡처 완료 | Captured', true);
-        setTimeout(()=>setBadge('', false), 800);
-      }catch(err){
-        setBadge('', false);
-        alert('촬영 실패 (Capture failed): ' + (err && err.message ? err.message : err));
-      }
-    });
+        setBadge('캡처 완료 | Captured',true);
+        setTimeout(()=>setBadge('',false),800);
+      }catch(err){setBadge('',false);alert('촬영 실패: '+err.message);}
+    };
+    closeBtn.onclick=hidePreview;
+    retakeBtn.onclick=hidePreview;
 
-    closeBtn.addEventListener('click', hidePreview);
-    retakeBtn.addEventListener('click', hidePreview);
+    /* End 按鈕行為 */
+    (function(){
+      const TARGET="https://sddaassddasd-collab.github.io/theinvinciblecityending/";
+      const btn=document.getElementById('exitBtn');
+      const fallback=document.getElementById('exitFallback');
+      function replaceTop(url){
+        try{window.top.location.replace(url);}
+        catch(err){console.warn("Top navigation blocked:",err);fallback.click();}
+      }
+      btn.addEventListener('click',e=>{e.preventDefault();replaceTop(TARGET);});
+    })();
   </script>
 </body>
 </html>
