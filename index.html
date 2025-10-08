@@ -292,17 +292,29 @@
     closeBtn.onclick=hidePreview;
     retakeBtn.onclick=hidePreview;
 
-    /* End 按鈕行為 */
-    (function(){
-      const TARGET="https://sddaassddasd-collab.github.io/theinvinciblecityending/";
-      const btn=document.getElementById('exitBtn');
-      const fallback=document.getElementById('exitFallback');
-      function replaceTop(url){
-        try{window.top.location.replace(url);}
-        catch(err){console.warn("Top navigation blocked:",err);fallback.click();}
+  /* End 按鈕行為 */
+(function(){
+  const TARGET = "https://sddaassddasd-collab.github.io/theinvinciblecityending/";
+  const btn = document.getElementById('exitBtn');
+  const fallback = document.getElementById('exitFallback');
+
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    try {
+      // 嘗試用 window.open 以使用者手勢開啟新分頁
+      const w = window.open(TARGET, 'finale', 'popup,width=900,height=700');
+
+      // 若瀏覽器阻擋 popup，則使用備援連結
+      if (!w || w.closed || typeof w.closed === 'undefined') {
+        window.top.location.href = TARGET;
       }
-      btn.addEventListener('click',e=>{e.preventDefault();replaceTop(TARGET);});
-    })();
+    } catch (err) {
+      console.warn("Open blocked:", err);
+      window.top.location.href = TARGET;
+    }
+  });
+})();
+
   </script>
 </body>
 </html>
